@@ -210,6 +210,7 @@ i18next
     resources: {
       en: { translation: require("./locales/en-US.json") },
       ja: { translation: require("./locales/ja-JP.json") },
+      zh: { translation: require("./locales/zh-CN.json") },
     },
   })
   .then(() => {
