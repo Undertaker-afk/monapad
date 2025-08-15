@@ -667,7 +667,7 @@ monacoEditor = monaco.editor.create(editor, {
 monacoEditor.addAction({
   id: "toggle-subtext",
   label: "Toggle Subtext",
-  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Slash], // Ctrl+/ または Cmd+/（Mac）
+  keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Slash],
   precondition: null,
   keybindingContext: null,
   run: function (ed) {
@@ -788,7 +788,6 @@ function applyDecorations() {
     return;
   }
 
-  // コードブロック内かどうか判定するための状態
   let insideCodeBlock = false;
 
   for (let i = 0; i < lines.length; i++) {
@@ -798,7 +797,7 @@ function applyDecorations() {
 
     if (trimmed.startsWith("```")) {
       insideCodeBlock = !insideCodeBlock;
-      continue; // ``` 行にはデコレーション適用しない
+      continue;
     }
 
     if (insideCodeBlock) continue;
@@ -2047,7 +2046,6 @@ function enableTabDragging(tab, data) {
             window.electronAPI.focusWindow(targetWindowId);
           });
 
-          // 元ウィンドウから削除
           removeTabAndAdjustUI(releasedTabData);
 
           if (wasOnlyTab) {
@@ -2188,6 +2186,7 @@ function createTab(name, content = "", path = null, insertIndex = null) {
   const nameSpan = document.createElement("span");
   nameSpan.className = "name";
   nameSpan.textContent = name;
+  nameSpan.title = name;
 
   const close = document.createElement("span");
   close.className = "close";
@@ -2228,8 +2227,8 @@ function createTab(name, content = "", path = null, insertIndex = null) {
 
   if (insertIndex !== null && insertIndex >= 0 && insertIndex < tabData.length) {
     const referenceTab = tabData[insertIndex].element;
-    tabs.insertBefore(tab, referenceTab.nextSibling);
-    tabData.splice(insertIndex + 1, 0, data);
+    tabs.insertBefore(tab, referenceTab);
+    tabData.splice(insertIndex, 0, data);
   } else {
     tabs.appendChild(tab);
     tabData.push(data);
@@ -2283,7 +2282,10 @@ async function attemptCloseTab(data) {
       isModalDisplayed = true;
 
       const actuallyCloseTab = () => {
-        if (data.path) addToRecentlyClosedFiles(data.path);
+        if (data.path) {
+          const tabIndex = tabData.indexOf(data);
+          addToRecentlyClosedFiles(data.path, tabIndex);
+        }
 
         const index = tabData.indexOf(data);
         tabs.removeChild(tab);
@@ -2377,7 +2379,10 @@ async function attemptCloseTab(data) {
     }
 
     // close immediately when save is not required
-    if (data.path) addToRecentlyClosedFiles(data.path);
+    if (data.path) {
+      const tabIndex = tabData.indexOf(data);
+      addToRecentlyClosedFiles(data.path, tabIndex);
+    }
     const index = tabData.indexOf(data);
     tabs.removeChild(tab);
     if (data.model) data.model.dispose();
@@ -2420,11 +2425,11 @@ async function attemptCloseTab(data) {
 }
 
 // add to recently closed files
-function addToRecentlyClosedFiles(filePath) {
+function addToRecentlyClosedFiles(filePath, tabIndex) {
   if (!filePath) return;
 
-  recentlyClosedFiles = recentlyClosedFiles.filter((path) => path !== filePath);
-  recentlyClosedFiles.unshift(filePath);
+  recentlyClosedFiles = recentlyClosedFiles.filter((item) => item.path !== filePath);
+  recentlyClosedFiles.unshift({ path: filePath, index: tabIndex });
   if (recentlyClosedFiles.length > 10) {
     recentlyClosedFiles = recentlyClosedFiles.slice(0, 10);
   }
@@ -2436,12 +2441,10 @@ function addToRecentlyClosedFiles(filePath) {
 }
 // open recently closed files
 async function reopenRecentlyClosedFile() {
-  if (recentlyClosedFiles.length === 0) {
-    console.log("No recently closed files to reopen");
-    return;
-  }
-  const filePath = recentlyClosedFiles.shift();
-  await loadFileByPath(filePath);
+  if (recentlyClosedFiles.length === 0) return;
+  const { path: filePath, index: originalIndex } = recentlyClosedFiles.shift();
+  const restoreIndex = Math.min(originalIndex, tabData.length);
+  await loadFileByPath(filePath, restoreIndex);
   if (recentlyClosedFiles.length === 0) {
     const reopenBtn = document.querySelector('[data-action="reopenClosedTab"]');
     reopenBtn?.classList.add("disabled");
@@ -2744,7 +2747,7 @@ async function openFile() {
 }
 
 // file load hadling
-async function loadFileByPath(filePath) {
+async function loadFileByPath(filePath, insertIndex = null) {
   if (!filePath) return;
 
   const existingTab = tabData.find((tab) => tab.path === filePath);
@@ -2757,7 +2760,6 @@ async function loadFileByPath(filePath) {
 
   const content = await window.electronAPI.readFile(filePath);
   if (content === null || content === undefined) {
-    // alert("Failed to read file.");
     console.error("Failed to read file.");
     return;
   }
@@ -2777,7 +2779,10 @@ async function loadFileByPath(filePath) {
       singleTab.isMarkdown = isMarkdownFile;
 
       const nameSpan = singleTab.element.querySelector(".name");
-      if (nameSpan) nameSpan.textContent = singleTab.name;
+      if (nameSpan) {
+        nameSpan.textContent = singleTab.name;
+        nameSpan.title = singleTab.name;
+      }
 
       const close = singleTab.element.querySelector(".close");
       if (close) close.classList.remove("show-unsaved");
@@ -2789,8 +2794,16 @@ async function loadFileByPath(filePath) {
     }
   }
 
-  const activeIndex = tabData.findIndex((t) => t.element.classList.contains("active"));
-  const newTab = createTab(filePath.split(/[/\\]/).pop(), content, filePath, activeIndex);
+  // use insertIndex if it's set, otherwise set next to active tab
+  let targetIndex = insertIndex;
+  if (targetIndex === null) {
+    const activeIndex = tabData.findIndex((t) => t.element.classList.contains("active"));
+    targetIndex = Math.min(tabData.length, activeIndex + 1);
+  } else {
+    targetIndex = Math.max(0, targetIndex);
+  }
+
+  const newTab = createTab(filePath.split(/[/\\]/).pop(), content, filePath, targetIndex);
   const newTabData = tabData[tabData.length - 1];
   newTabData.originalContent = content;
   newTabData._lastExternalContent = content;
@@ -2927,6 +2940,7 @@ async function saveAsFile() {
     active.path = filePath;
     active.name = filePath.split(/[\\/]/).pop();
     active.element.querySelector(".name").textContent = active.name;
+    active.element.querySelector(".name").title = active.name;
     active.originalContent = content;
     active.isFileSaved = true;
     active._lastExternalContent = content;
@@ -3039,13 +3053,13 @@ document.addEventListener("contextmenu", async (e) => {
   if (!rightClickedTab) return;
 
   // update reopen closed tab button
-  const validPaths = [];
-  for (const path of recentlyClosedFiles) {
-    const exists = await window.electronAPI.fileExists(path);
-    if (exists) validPaths.push(path);
+  const validItems = [];
+  for (const item of recentlyClosedFiles) {
+    const exists = await window.electronAPI.fileExists(item.path);
+    if (exists) validItems.push(item);
   }
-  if (validPaths.length !== recentlyClosedFiles.length) {
-    recentlyClosedFiles = validPaths;
+  if (validItems.length !== recentlyClosedFiles.length) {
+    recentlyClosedFiles = validItems;
     const reopenBtn = document.querySelector('[data-action="reopenClosedTab"]');
     reopenBtn.classList.toggle("disabled", recentlyClosedFiles.length === 0);
   }

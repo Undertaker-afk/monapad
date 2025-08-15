@@ -506,23 +506,34 @@ function getFilePathFromArgv(argv) {
   log.info("Debug: process.argv =", argv);
 
   for (let i = 1; i < argv.length; i++) {
-    const arg = argv[i];
+    let arg = argv[i];
     log.info(`Debug: checking arg[${i}] =`, arg);
 
-    // - not parameter
-    // - doesn't end with .exe nor .app
-    // - path exists
-    // - has extension
-    if (
-      arg &&
-      !arg.startsWith("--") &&
-      !arg.endsWith(".exe") &&
-      !arg.endsWith(".app") &&
-      fs.existsSync(arg) &&
-      path.extname(arg)
-    ) {
-      log.info("Debug: Found valid file path:", arg);
-      return path.resolve(arg);
+    if (!arg || arg.startsWith("--")) continue;
+
+    // remove quote
+    arg = arg.replace(/^["']|["']$/g, "");
+
+    try {
+      const resolved = path.resolve(arg);
+      const stat = fs.statSync(resolved);
+
+      // - not parameter
+      // - doesn't end with .exe nor .app
+      // - path exists
+      // - has extension
+      if (
+        stat.isFile() &&
+        !arg.endsWith(".exe") &&
+        !arg.endsWith(".app") &&
+        (path.extname(arg) || // with extension
+          path.basename(arg).startsWith(".")) // allow hidden files like .env
+      ) {
+        log.info("Debug: Found valid file path:", resolved);
+        return resolved;
+      }
+    } catch (err) {
+      log.warn(`Debug: fs.statSync failed for ${arg}`, err.message);
     }
   }
 
