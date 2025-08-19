@@ -96,6 +96,11 @@ Feel free to review the source code since it is 100% open sourced.
 - [font-list](https://github.com/oldj/node-font-list)
 - [Choices.js](https://github.com/Choices-js/Choices)
 
+## Special Thanks:
+
+- Localization Contributors:
+  - [zh-CN][Chinese]: [kazepu](https://github.com/kazepu)
+
 ## Stay tuned:
 
 [Sheeta's Discord Server](https://discord.gg/2dXs5HwXuW)
