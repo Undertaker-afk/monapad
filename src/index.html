@@ -594,9 +594,10 @@
       .tab .close .close-svg:hover {
         background: var(--color3);
       }
-      .tab:hover .close .close-svg,
+      #tabs:not(.compact) .tab:hover .close .close-svg,
       .tab.active .close .close-svg,
-      .tab:hover .close.show-unsaved .close-svg {
+      #tabs:not(.compact) .tab:hover .close.show-unsaved .close-svg,
+      #tabs.compact .tab.active:hover .close .close-svg {
         display: flex;
       }
       .tab .close.show-unsaved .close-svg {
@@ -617,8 +618,15 @@
       .tab .close.show-unsaved .unsaved-dot {
         display: block;
       }
-      .tab:hover .close.show-unsaved .unsaved-dot {
+      #tabs:not(.compact) .tab:hover .close.show-unsaved .unsaved-dot,
+      #tabs.compact .tab.active:hover .close.show-unsaved .unsaved-dot {
         display: none;
+      }
+      #tabs.compact .tab:hover .close.show-unsaved .unsaved-dot {
+        background: var(--editorText);
+      }
+      #tabs.compact .tab:not(.active) .close.show-unsaved {
+        pointer-events: none;
       }
 
       /* name span: (.tab >) .name > .reload-button */
@@ -637,7 +645,7 @@
         mask-repeat: no-repeat;
         line-height: 20px;
       }
-      .tab:hover .name,
+      #tabs:not(.compact) .tab:hover .name,
       .tab.active .name,
       .tab .name:has(+ .show-unsaved) {
         max-width: calc(100% - 17px);

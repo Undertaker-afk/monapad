@@ -1413,6 +1413,7 @@ function updateMenuPositions() {
 }
 window.addEventListener("resize", () => {
   updateMenuPositions();
+  updateTabsCompactClass();
 
   // update editor padding
   const editorHeight = editor.clientHeight;
@@ -1701,6 +1702,7 @@ function handleTabsMouseLeave() {
   isHoveringLastTab = false;
   fixedTabsWidth = null;
   tabs.style.maxWidth = "";
+  updateTabsCompactClass();
 }
 function isMouseInsideTabsContainer() {
   const rect = tabsContainer.getBoundingClientRect();
@@ -2173,6 +2175,15 @@ function removeTabAndAdjustUI(targetTabData) {
   }
 }
 
+// add compact class to tabs when tab width is less than 50 px
+function updateTabsCompactClass() {
+  const tabElements = tabs.querySelectorAll(".tab");
+  if (tabElements.length === 0) return;
+
+  const tabWidth = tabElements[0].offsetWidth;
+  tabs.classList.toggle("compact", tabWidth <= 60);
+}
+
 // create tab
 function createTab(name, content = "", path = null, insertIndex = null) {
   if (!name) name = `${i18next.t("file.untitled")}.txt`;
@@ -2263,8 +2274,34 @@ function createTab(name, content = "", path = null, insertIndex = null) {
     switchTab(data);
   };
 
+  // tab middle click
+  tab.addEventListener("auxclick", async (e) => {
+    if (e.button === 1) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (tabAreaHovered && !isHoveringLastTab) {
+        const currentTabsWidth = tabs.offsetWidth;
+        const tabWidth = tab.offsetWidth;
+        fixedTabsWidth = currentTabsWidth - tabWidth;
+        tabs.style.maxWidth = fixedTabsWidth + "px";
+      } else if (tabAreaHovered && isHoveringLastTab) {
+        fixedTabsWidth = tabs.offsetWidth;
+        tabs.style.maxWidth = fixedTabsWidth + "px";
+      }
+
+      await attemptCloseTab(data);
+
+      if (tabAreaHovered && !isMouseInsideTabsContainer()) {
+        handleTabsMouseLeave();
+      }
+    }
+  });
+
   // tab drag handler
   enableTabDragging(tab, data);
+
+  updateTabsCompactClass();
 
   return data;
 }
@@ -2290,6 +2327,7 @@ async function attemptCloseTab(data) {
 
         const index = tabData.indexOf(data);
         tabs.removeChild(tab);
+        updateTabsCompactClass();
         if (data.model) data.model.dispose();
         tabData = tabData.filter((t) => t !== data);
 
@@ -2386,6 +2424,7 @@ async function attemptCloseTab(data) {
     }
     const index = tabData.indexOf(data);
     tabs.removeChild(tab);
+    updateTabsCompactClass();
     if (data.model) data.model.dispose();
     tabData = tabData.filter((t) => t !== data);
 

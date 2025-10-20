@@ -38,6 +38,7 @@ The name "Monapad" combines Monaco (the editor engine) and Notepad, reflecting i
 - Ctrl+T to create new tab.
 - Ctrl+Shift+T to reopen recently closed tab.
 - Ctrl+W to close current tab.
+- Middle-click on a tab to close it
 - Ctrl(+Shift)+Tab to switch between tabs.
 - Ctrl+Num(1-9) to quickly switch to specified tab.
 - Ctrl+"+/-" or "mouse wheel" for zooming. Ctrl+0 to reset zooming to default.
