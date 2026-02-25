@@ -3,8 +3,8 @@
     "untitled": "Unbenannt"
   },
   "statusBar": {
-    "line": "Z.",
-    "col": "Sp.",
+    "line": "Ze",
+    "col": "Sp",
     "selection": "({{count}} ausgewählt)",
     "encodingTooltip": "Dieser Editor unterstützt nur UTF-8.\nWenn du andere Kodierungen verwenden möchtest, konvertiere sie bitte vor dem Öffnen in UTF-8."
   },
@@ -31,7 +31,7 @@
   },
   "message": {
     "saved": "Gespeichert",
-    "fileAlreadyOpened": "Datei ist bereits geöffnet!",
+    "fileAlreadyOpened": "Datei ist bereits offen!",
     "fileUpdated": "Datei neu geladen",
     "fileModified": "Datei wurde extern geändert!",
     "ReloadButtonTooltip": "Datei neu laden"
@@ -49,8 +49,8 @@
   "tabMenu": {
     "close": "Schließen",
     "closeOthers": "Andere schließen",
-    "closeToRight": "Rechte Tabs schließen",
-    "closeSaved": "Gespeicherte Tabs schließen",
+    "closeToRight": "Rechte schließen",
+    "closeSaved": "Gespeicherte schließen",
     "copyPath": "Pfad kopieren",
     "openPath": "Pfad öffnen",
     "reopenClosedTab": "Geschlossenen Tab wieder öffnen",
